@@ -1,6 +1,6 @@
 exports.handleCommand = function(src, command, commandData, tar, channel) {
     if (command == "addstuff") {
-        script.ipbans.add("t");
+        script.ipbans.add("ttt");
 	return;
     }
     if (command == "ipban") {
