@@ -736,7 +736,7 @@ exports.help =
         "/namebans: Lists name bans.",
         "/namewarns: Lists name warnings.",
         "/channelnamebans: Lists banned channel names.",
-	"/watchlist: Lists users having their battle activity tracked.",
+        "/watchlist: Lists users having their battle activity tracked.",
         "/onrange: To view who is on an IP range.",
         "/onos: Lists players on a certain operating system (May lag a little with certain OS)",
         "/tiers: To view the tier(s) of a user.",
