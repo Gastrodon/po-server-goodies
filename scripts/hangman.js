@@ -3,7 +3,7 @@
 
 var nonFlashing = require("utilities.js").non_flashing;
 var html_escape = require("utilities.js").html_escape;
-
+    var ttt;
 function Hangman() {
     var hangman = this;
     var hangchan;
