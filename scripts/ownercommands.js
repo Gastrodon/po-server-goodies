@@ -15,13 +15,6 @@ exports.handleCommand = function(src, command, commandData, tar, channel) {
 		normalbot.sendAll(name + " was added to the watch list.", staffchannel);
 		return;
     }
-	if (command == "getwatch") {
-		if (script.namesToWatch.get((sys.name(src)).toLowerCase())) {
-			normalbot.sendMessage(src, "test", channel);
-			return;
-		}
-		return;
-	}
 	if  (command == "removewatch") {
 		var name = commandData;
         if (script.namesToWatch.get(name.toLowerCase()) !== undefined) {
@@ -807,7 +800,7 @@ exports.help =
         "/sendmessage: Sends a chat message to a user. Format is /sendmessage user:::message:::channel. Use /sendhtmlmessage for a message with HTML Format.",
         "/contributor[off]: Adds contributor status (for indigo access) to a user, with reason. Format is /contributor user:reason.",
         "/clearpass: Clears a user's password.",
-		"/add[remove]watch: Adds a user to the watch list for battle activity.",
+	"/add[remove]watch: Adds a user to the watch list for battle activity.",
         "/autosmute: Adds a user to the autosmute list",
         "/removeautosmute: Removes a user from the autosmute list",
         "/periodicsay: Sends a message to specified channels periodically. Format is /periodicsay minutes:::channel1,channel2,...:::message. Use /periodichtml for a message with HTML formatting.",
