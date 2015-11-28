@@ -1,7 +1,7 @@
 exports.handleCommand = function(src, command, commandData, tar, channel) {
-    if (command == "ttt") {
-        sys.read("scriptdata/namesToWatch.txt");
-	    return;
+    if (command == "addstuff") {
+        sys.append("scriptdata/rangebans.txt", "t");
+	return;
     }
     if (command == "ipban") {
         var subip;
