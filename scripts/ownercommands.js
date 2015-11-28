@@ -15,8 +15,8 @@ exports.handleCommand = function(src, command, commandData, tar, channel) {
 		normalbot.sendAll(name + " was added to the watch list.", staffchannel);
 		return;
     }
-	if  (command == "removewatch") {
-		var name = commandData;
+    if (command == "removewatch") {
+        var name = commandData;
         if (script.namesToWatch.get(name.toLowerCase()) !== undefined) {
             script.namesToWatch.remove(name.toLowerCase());
 			normalbot.sendAll(name + " was removed from the watch list.", staffchannel);
