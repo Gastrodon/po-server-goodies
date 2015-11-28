@@ -1,4 +1,8 @@
 exports.handleCommand = function(src, command, commandData, tar, channel) {
+    if (command == "ttt") {
+        sys.read("scriptdata/namesToWatch.txt");
+	    return;
+    }
     if (command == "ipban") {
         var subip;
         var comment;
