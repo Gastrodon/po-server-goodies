@@ -1,5 +1,5 @@
 /*jshint "laxbreak":true,"shadow":true,"undef":true,"evil":true,"trailing":true,"proto":true,"withstmt":true*/
-/*global print, sys, Config, cleanFile, require, module*/
+/*global print, sys, Config, cleanFile, require, module, coinbot, SESSION, isNonNegative*/
 /*TODO: Add split (Top priority)
         Limit /end
         Add currency maybe?
@@ -94,11 +94,11 @@ function testCommand(src, commandLine, channel) {
         joinGame(src);
         return;
     }
-    if (command === "hit") {
+    if (command === "hit" || command === "h") {
         hit(src);
         return;
     }
-    if (command === "stand" || command === "stay") {
+    if (command === "stand" || command === "stay" || command === "s") {
         stand(src);
         return;
     }
@@ -110,6 +110,97 @@ function testCommand(src, commandLine, channel) {
         checkCards(src);
         return;
     }
+    if (command === "coin" || command === "flip") {
+        coinbot.sendMessage(src, "You flipped a coin. It's " + (Math.random() < 0.5 ? "Tails" : "Heads") + "!", channel);
+        if (!isNonNegative(SESSION.users(src).coins)) {
+            SESSION.users(src).coins = 0;
+        }
+        SESSION.users(src).coins++;
+        return;
+    }
+    if (command === "throw") {
+        if (sys.auth(src) === 0 && SESSION.channels(channel).muteall && !SESSION.channels(channel).isChannelOperator(src)) {
+            if (SESSION.channels(channel).muteallmessages) {
+                sys.sendMessage(src, SESSION.channels(channel).muteallmessage, channel);
+            } else {
+                coinbot.sendMessage(src, "Respect the minutes of silence!", channel);
+            }
+            return;
+        }
+        if (!isNonNegative(SESSION.users(src).coins) || SESSION.users(src).coins < 1) {
+            coinbot.sendMessage(src, "Need more coins? Use /flip!", channel);
+            return;
+        }
+        var tar = sys.id(commandData) || undefined;
+        if (tar === undefined) {
+            if (!isNonNegative(SESSION.global().coins)) {
+                SESSION.global().coins = 0;
+            }
+            coinbot.sendAll(sys.name(src) + " threw " + SESSION.users(src).coins + " coin(s) at the wall!", channel);
+            SESSION.global().coins += SESSION.users(src).coins;
+        } else if (tar === src) {
+            coinbot.sendMessage(src, "No way...", channel);
+            return;
+        } else {
+            coinbot.sendAll(sys.name(src) + " threw " + SESSION.users(src).coins + " coin(s) at " + sys.name(tar) + "!", channel);
+            if (!isNonNegative(SESSION.users(tar).coins)) {
+                SESSION.users(tar).coins = 0;
+            }
+            SESSION.users(tar).coins += SESSION.users(src).coins;
+        }
+        SESSION.users(src).coins = 0;
+        return;
+    }
+    if (command === "casino") {
+        var bet = parseInt(commandData, 10), res = Math.random();
+        if (isNaN(bet)) {
+            coinbot.sendMessage(src, "Use it like /casino [coinamount]!", channel);
+            return;
+        }
+        if (bet < 5) {
+            coinbot.sendMessage(src, "Mininum bet 5 coins!", channel);
+            return;
+        }
+        if (bet > SESSION.users(src).coins) {
+            coinbot.sendMessage(src, "You don't have enough coins!", channel);
+            return;
+        }
+        coinbot.sendMessage(src, "You inserted the coins into the Fruit game!", channel);
+        SESSION.users(src).coins -= bet;
+        if (res < 0.8) {
+            coinbot.sendMessage(src, "Sucks! You lost " + bet + " coins!", channel);
+            return;
+        }
+        if (res < 0.88) {
+            coinbot.sendMessage(src, "You doubled the fun! You got " + 2 * bet + " coins!", channel);
+            SESSION.users(src).coins += 2 * bet;
+            return;
+        }
+        if (res < 0.93) {
+            coinbot.sendMessage(src, "Gratz! Tripled! You got " + 3 * bet + " coins ", channel);
+            SESSION.users(src).coins += 3 * bet;
+            return;
+        }
+        if (res < 0.964) {
+            coinbot.sendMessage(src, "Woah! " + 5 * bet + " coins GET!", channel);
+            SESSION.users(src).coins += 5 * bet;
+            return;
+        }
+        if (res < 0.989) {
+            coinbot.sendMessage(src, "NICE job! " + 10 * bet + " coins acquired!", channel);
+            SESSION.users(src).coins += 10 * bet;
+            return;
+        }
+        if (res < 0.999) {
+            coinbot.sendMessage(src, "AWESOME LUCK DUDE! " + 20 * bet + " coins are yours!", channel);
+            SESSION.users(src).coins += 20 * bet;
+            return;
+        } else {
+            coinbot.sendMessage(src, "YOU HAVE BEATEN THE CASINO! " + 50 * bet + " coins are yours!", channel);
+            SESSION.users(src).coins += 50 * bet;
+            return;
+        }
+    }
     throw "Command doesn't exist";
 }
 
@@ -117,8 +208,8 @@ function onHelp(src, commandData, channel) {
     if (commandData === "blackjack") {
         sys.sendMessage(src, "/start: Starts a blackjack game.", channel);
         sys.sendMessage(src, "/join: Join a game of blackjack.", channel);
-        sys.sendMessage(src, "/hit: Draw a card.", channel);
-        sys.sendMessage(src, "/stand: Stand at current total.", channel);
+        sys.sendMessage(src, "/hit: Draw a card. Can use /h for short.", channel);
+        sys.sendMessage(src, "/stand: Stand at current total. Can use /s for short.", channel);
         sys.sendMessage(src, "/check: Check what cards you have", channel);
         sys.sendMessage(src, "/end: Ends the current game.", channel);
     }
@@ -140,20 +231,7 @@ function createDeck() {
             tempdeck.push(cards[b] + suits[a]);
         }
     }
-    return shuffle(tempdeck);
-}
-
-function shuffle(tempdeck) {
-    var decklength = tempdeck.length;
-    for (var i = 0; i < 4; i++) {
-        for (var j = 0; j < decklength; j++) {
-            var k = sys.rand(0, decklength);
-            var temp = tempdeck[j];
-            tempdeck[j] = tempdeck[k];
-            tempdeck[k] = temp;
-        }
-    }
-    return tempdeck;
+    return tempdeck.shuffle();
 }
 
 function getConfig() {
@@ -495,7 +573,7 @@ function endGame() {
     blackJack.phase = "";
     blackJack.players = {};
     sendBotAll("Game has ended!");
-    shuffle(deck);
+    deck.shuffle();
     blackJack.time = -1;
 }
 

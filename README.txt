@@ -15,8 +15,8 @@ only suitable for the server we are running.
 DON'T USE THE TAB CHARACTER. The scripts use 4 spaces and the mix of tab and spaces is what
 causes the formatting issues at times.
 You can set Notepad++ to use 4 spaces when the tab key is hit though if you use that to edit.
-Settings->Preferences->Language Menu/Tab Settings
-Set it to "Tab Size 4" and tick the replace with space box
+Settings->Preferences->Tab Settings
+Set it to "Tab Size: 4" and tick the "Replace by space" box
 
 Using jshint for checking some coding style is recommended.
 In particular, following practices are frowned upon:
@@ -24,7 +24,4 @@ In particular, following practices are frowned upon:
 - trailing whitespace
 - undefined variables (always use var in the outermost scope for that variable)
 
-*** tours.js version notes ***
-- All versions before 1.622p have hardcoded parameters - update or change them.
-- Updating while tournaments are in progress on major updates may break the system - all future commits will note this
-- Versions marked with a 'p' should be bugfree, 'a' means it is in alpha testing and could be unstable, 'b' means it's in beta testing.
+Full list of contributors here: https://github.com/po-devs/po-server-goodies/graphs/contributors

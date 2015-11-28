@@ -50,8 +50,19 @@ exports.handleCommand = function(src, command, commandData, tar, channel) {
         }
         return;
     }
+    if (command == "perm") {
+        if (channel == staffchannel || channel === 0) {
+            channelbot.sendMessage(src, "you can't do that here.", channel);
+            return;
+        }
+
+        SESSION.channels(channel).perm = (commandData.toLowerCase() == 'on');
+        SESSION.global().channelManager.update(channel);
+        channelbot.sendAll("" + sys.name(src) + (SESSION.channels(channel).perm ? " made the channel permanent." : " made the channel a temporary channel again."), channel);
+        return;
+    }
     if (command == "changerating") {
-        var data =  commandData.split(' -- ');
+        var data =  commandData.split(':::');
         if (data.length != 3) {
             normalbot.sendMessage(src, "You need to give 3 parameters.", channel);
             return;
@@ -70,17 +81,6 @@ exports.handleCommand = function(src, command, commandData, tar, channel) {
             sys.sendMessage(src, name + " " + sys.dbAuth(name), channel);
         });
         sys.sendMessage(src, "",channel);
-        return;
-    }
-    if (command == "capslockday") {
-        if (commandData == "off") {
-            CAPSLOCKDAYALLOW = false;
-            normalbot.sendMessage(src, "You turned caps lock day off!", channel);
-        }
-        else if (commandData == "on") {
-            CAPSLOCKDAYALLOW = true;
-            normalbot.sendMessage(src, "You turned caps lock day on!", channel);
-        }
         return;
     }
     if (command == "contributor") {
@@ -225,7 +225,7 @@ exports.handleCommand = function(src, command, commandData, tar, channel) {
         var removed = [];
         script.smutes.removeIf(function(memoryhash, item) {
             var data = memoryhash.get(item).split(":");
-            if (parseInt(data[0], 10) < limit || (data.length > 3 && parseInt(data[2], 10) < limit)) {
+            if (parseInt(data[0], 10) < limit) {
                 removed.push(item);
                 return true;
             }
@@ -233,6 +233,7 @@ exports.handleCommand = function(src, command, commandData, tar, channel) {
         });
         if (removed.length > 0) {
             normalbot.sendMessage(src, "" + removed.length + " smutes purged successfully.", channel);
+            script.smutes.save();
         } else {
             normalbot.sendMessage(src, "No smutes were purged.", channel);
         }
@@ -267,6 +268,10 @@ exports.handleCommand = function(src, command, commandData, tar, channel) {
     }
     if (command == "sendall") {
         sys.sendAll(commandData, channel);
+        return;
+    }
+    if (command == "sendhtmlall") {
+        sys.sendHtmlAll(commandData, channel);
         return;
     }
     if(command == "sendmessage"){
@@ -336,7 +341,7 @@ exports.handleCommand = function(src, command, commandData, tar, channel) {
     }
     if (command == "periodicsay" || command == "periodichtml") {
         var sayer = src;
-        var args = commandData.split(":");
+        var args = commandData.split(":::");
         var minutes = parseInt(args[0], 10);
         if (minutes < 3) {
             return;
@@ -429,7 +434,7 @@ exports.handleCommand = function(src, command, commandData, tar, channel) {
             return;
         }
     }
-    if (command == "clearladder") {
+    if (command == "clearladder" || command == "resetladder") {
         var tier = utilities.find_tier(commandData);
         if(tier) {
             sys.resetLadder(tier);
@@ -439,34 +444,9 @@ exports.handleCommand = function(src, command, commandData, tar, channel) {
         normalbot.sendMessage(src, commandData + " is not a tier");
         return;
     }
-    if (command == "indigo") {
-        if (commandData == "on") {
-            if (sys.existChannel("Indigo Plateau")) {
-                staffchannel = sys.channelId("Indigo Plateau");
-            } else {
-                staffchannel = sys.createChannel("Indigo Plateau");
-            }
-            SESSION.channels(staffchannel).topic = "Welcome to the Staff Channel! Discuss of all what users shouldn't hear here! Or more serious stuff...";
-            SESSION.channels(staffchannel).perm = true;
-            normalbot.sendMessage(src, "Staff channel was remade!");
-            return;
-            }
-        if (commandData == "off") {
-            SESSION.channels(staffchannel).perm = false;
-            var players = sys.playersOfChannel(staffchannel);
-            for (var x = 0; x < players.length; x++) {
-                sys.kick(players[x], staffchannel);
-                if (sys.isInChannel(players[x], 0) !== true) {
-                    sys.putInChannel(players[x], 0);
-                }
-            }
-            normalbot.sendMessage(src, "Staff channel was destroyed!");
-            return;
-        }
-    }
     if (command == "stopbattles") {
-        battlesStopped = !battlesStopped;
-        if (battlesStopped)  {
+        script.battlesStopped = !script.battlesStopped;
+        if (script.battlesStopped)  {
             sys.sendAll("");
             sys.sendAll("*** ********************************************************************** ***");
             battlebot.sendAll("The battles are now stopped. The server will restart soon.");
@@ -586,8 +566,7 @@ exports.handleCommand = function(src, command, commandData, tar, channel) {
                 sys.writeToFile('scripts.js', resp);
             } catch (err) {
                 sys.changeScript(sys.getFileContent('scripts.js'));
-                normalbot.sendAll('Updating failed, loaded old scripts!', staffchannel);
-                sys.sendMessage(src, "ERROR: " + err + (err.lineNumber ? " on line: " + err.lineNumber : ""), channel_local);
+                normalbot.sendAll(err + (err.lineNumber ? " on line: " + err.lineNumber : "") + ". Using old scripts instead!", staffchannel);
                 print(err);
             }
         };
@@ -612,7 +591,7 @@ exports.handleCommand = function(src, command, commandData, tar, channel) {
                     normalbot.sendMessage(src, "Tiers.xml updated!", channel);
                 }
             } catch (e) {
-                normalbot.sendMessage(src, "ERROR: "+e, channel);
+                normalbot.sendAll(e + (e.lineNumber ? " on line: " + e.lineNumber : ""), staffchannel);
                 return;
             }
         };
@@ -678,13 +657,23 @@ exports.handleCommand = function(src, command, commandData, tar, channel) {
         return;
     }
     if (command == "loadstats") {
-        sys.loadBattlePlugin("serverplugins/libusagestats_debug.so");
+        sys.loadBattlePlugin("battleserverplugins/libusagestats_debug.so");
         normalbot.sendMessage(src, "Usage Stats plugin loaded", channel);
+        return;
+    }
+    if (command == "loadreplays") {
+        sys.loadBattlePlugin("battleserverplugins/libbattlelogs_debug.so");
+        normalbot.sendMessage(src, "Replay plugin loaded", channel);
         return;
     }
     if (command == "unloadstats") {
         sys.unloadBattlePlugin("Usage Statistics");
         normalbot.sendMessage(src, "Usage Stats plugin unloaded", channel);
+        return;
+    }
+    if (command == "unloadreplays") {
+        sys.unloadBattlePlugin("Battle Logs");
+        normalbot.sendMessage(src, "Replay plugin unloaded", channel);
         return;
     }
     if (command == "warnwebclients") {
@@ -700,9 +689,10 @@ exports.handleCommand = function(src, command, commandData, tar, channel) {
         if (!commandData) {
             return;
         }
-        ["Tohjo Falls", "Trivia", "Tournaments", "Indigo Plateau", "Victory Road", "TrivReview", "Mafia", "Hangman"].forEach(function(c) {
+        /*["Tohjo Falls", "Trivia", "Tournaments", "Indigo Plateau", "Victory Road", "TrivReview", "Mafia", "Hangman"].forEach(function(c) {
             sys.sendHtmlAll("<font size = 4><b>"+commandData+"</b></font>", sys.channelId(c));
-        });
+        });*/
+        sys.sendHtmlAll("<font size = 4><b>"+commandData+"</b></font>");
         return;
     }
     
@@ -741,32 +731,55 @@ exports.handleCommand = function(src, command, commandData, tar, channel) {
         normalbot.sendAll(commandData.toCorrectCase() + "'s temp auth was removed", staffchannel);
         return;
     }
+    if (command == "setwebannouncement" || command == "setannouncement") {
+        var updateURL = Config.base_url + "announcement.html";
+        sys.webCall(updateURL, function(resp) {
+            sys.changeAnnouncement(resp);
+        });
+        return;
+    }
+    if (command == "testwebannouncement" || command == "testannouncement") {
+        var updateURL = Config.base_url + "announcement.html";
+        sys.webCall(updateURL, function(resp) {
+            sys.setAnnouncement(resp, src);
+        });
+        return;
+    }
+    if (command == "updateleague") {
+        var updateURL = Config.base_url + "league.json";
+        sys.webCall(updateURL, function(resp) {
+            try { 
+                script.league = JSON.parse(resp).league;
+                sys.write(Config.dataDir+"league.json", resp);
+                normalbot.sendMessage(src, "League file updated!", channel);
+            }
+            catch (e) {
+                normalbot.sendMessage(src, "There was an error with the league file", channel);
+            }
+        });
+        return;
+    }
     return "no command";
 };
 exports.help = 
     [
-        "/changerating: Changes the rating of a rating abuser. Format is /changerating user -- tier -- rating.",
+        "/changerating: Changes the rating of a rating abuser. Format is /changerating user:::tier::rating.",
         "/stopbattles: Stops all new battles to allow for server restart with less problems for users.",
         "/hiddenauth: Displays all users with more higher auth than 3.",
-        "/imp: Lets you speak as someone",
-        "/impoff: Stops your impersonating.",
-        "/sendmessage: Sends a chat message to a user. Format is /sendmessage user:::message:::channel.",
-        "/sendhtmlmessage: Sends an HTML chat message to a user. Format is /sendmessage user:::message:::channel.",
-        "/contributor: Adds contributor status (for indigo access) to a user, with reason. Format is /contributor user:reason.",
-        "/contributoroff: Removes contributor status from a user.",
+        "/imp[off]: Lets you speak as someone",
+        "/perm [on/off]: Make the current permanent channel or not (permanent channels remain listed when they have no users).",
+        "/sendmessage: Sends a chat message to a user. Format is /sendmessage user:::message:::channel. Use /sendhtmlmessage for a message with HTML Format.",
+        "/contributor[off]: Adds contributor status (for indigo access) to a user, with reason. Format is /contributor user:reason.",
         "/clearpass: Clears a user's password.",
         "/autosmute: Adds a user to the autosmute list",
         "/removeautosmute: Removes a user from the autosmute list",
-        "/periodicsay: Sends a message to specified channels periodically. Format is /periodicsay minutes:channel1,channel2,...:message",
-        "/periodichtml: Sends a message to specified channels periodically, using HTML formatting. Format is /periodichtml minutes:channel1,channel2,...:message",
+        "/periodicsay: Sends a message to specified channels periodically. Format is /periodicsay minutes:::channel1,channel2,...:::message. Use /periodichtml for a message with HTML formatting.",
         "/endcalls: Ends the next periodic message.",
-        "/sendall: Sends a message to everyone.",
+        "/sendall: Sends a message to everyone. Use /sendhtmlall for a message with HTML formatting.",
         "/changeauth[s]: Changes the auth of a user. Format is /changeauth auth user. If using /changeauths, the change will be silent.",
         "/showteam: Displays the team of a user (to help people who have problems with event moves or invalid teams).",
-        "/ipban: Bans an IP. Format is /ipban ip comment.",
-        "/ipunban: Unbans an IP.",
-        "/rangeban: Makes a range ban. Format is /rangeban ip comment.",
-        "/rangeunban: Removes a rangeban.",
+        "/ip[un]ban: Bans an IP. Format is /ipban ip comment.",
+        "/range[un]ban: Makes a range ban. Format is /rangeban ip comment.",
         "/purgemutes: Purges mutes older than the given time in seconds. Default is 4 weeks.",
         "/purgesmutes: Purges smutes older than the given time in seconds. Default is 4 weeks.",
         "/purgembans: Purges mafiabans older than the given time in seconds. Default is 1 week.",
@@ -777,17 +790,18 @@ exports.help =
         "/updatenotice: Updates notice from the web.",
         "/updatescripts: Updates scripts from the web.",
         "/variablereset: Resets scripts variables.",
-        "/capslockday [on/off]: To turn caps lock day on or off.",
-        "/indigo [on/off]: To create or destroy staff channel.",
         "/updatebansites: To update ban sites.",
         "/updatetierchecks: To update tier checks.",
-        "/updatecommands: To update command files.",
+        "/updatecommands: To update command files. Update scripts afterwards for full effect.",
         "/updatetiers[soft]: To update tiers. Soft saves to file only without reloading.",
-        "/loadstats: Loads the usage stats plugin.",
-        "/unloadstats: Unloads the usage stats plugin.",
+        "/[un]loadstats: Loads the usage stats plugin.",
+        "/[un]loadreplay: Loads the replay plugin.",
         "/warnwebclients: Sends a big alert with your message to webclient users.",
         "/clearladder: Clears rankings from a tier.",
         "/advertise: Sends a html message to the main channels",
         "/tempmod/admin: Gives temporary auth to a user. Lasts until they log out",
-        "/detempauth: Removes temporary auth given to a user"
+        "/detempauth: Removes temporary auth given to a user",
+        "/testannouncement: Test the current announcement on Github (only shows for the command user)",
+        "/setannouncement: Sets the announcement to the one on Github",
+        "/updateleague: Updates the league data from Github"
     ];

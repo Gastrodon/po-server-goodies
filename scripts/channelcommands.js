@@ -1,7 +1,153 @@
-exports.handleCommand = function(src, command, commandData, tar, channel) {
+exports.handleCommand = function (src, command, commandData, tar, channel) {
+    var html_escape = require("utilities.js").html_escape;
     var poChannel = SESSION.channels(channel);
-    if (poChannel.operators === undefined)
+    if (poChannel.operators === undefined) {
         poChannel.operators = [];
+    }
+    if (command === "cauth") {
+        if (typeof SESSION.channels(channel).operators !== "object") {
+            SESSION.channels(channel).operators = [];
+        }
+        if (typeof SESSION.channels(channel).admins !== "object") {
+            SESSION.channels(channel).admins = [];
+        }
+        if (typeof SESSION.channels(channel).masters !== "object") {
+            SESSION.channels(channel).masters = [];
+        }
+        if (typeof SESSION.channels(channel).members !== "object") {
+            SESSION.channels(channel).members = [];
+        }
+         if (commandData === "~") {
+            var ret = {};
+            ret.members = SESSION.channels(channel).members;
+            ret.operators = SESSION.channels(channel).operators;
+            ret.admins = SESSION.channels(channel).admins;
+            ret.owners = SESSION.channels(channel).masters;
+            sys.sendMessage(src, "+cauth: " + JSON.stringify(ret), channel);
+            return;
+        }
+        var x, ownersArr = [], adminsArr = [], modsArr = [], membersArr = [];
+        for (x = 0; x < SESSION.channels(channel).masters.length; x++) {
+            if (sys.isInChannel(sys.id(SESSION.channels(channel).masters[x]), channel)) {
+                ownersArr.push("<b><font color='" + script.getColor(sys.id(SESSION.channels(channel).masters[x])) + "'>" + html_escape(sys.name(sys.id(SESSION.channels(channel).masters[x]))) + "</font></b>");
+            } else {
+                ownersArr.push(html_escape(SESSION.channels(channel).masters[x]));
+            }
+        }
+        for (x = 0; x < SESSION.channels(channel).admins.length; x++) {
+            if (sys.isInChannel(sys.id(SESSION.channels(channel).admins[x]), channel)) {
+                adminsArr.push("<b><font color='" + script.getColor(sys.id(SESSION.channels(channel).admins[x])) + "'>" + html_escape(sys.name(sys.id(SESSION.channels(channel).admins[x]))) + "</font></b>");
+            } else {
+                adminsArr.push(html_escape(SESSION.channels(channel).admins[x]));
+            }
+        }
+        for (x = 0; x < SESSION.channels(channel).operators.length; x++) {
+            if (sys.isInChannel(sys.id(SESSION.channels(channel).operators[x]), channel)) {
+                modsArr.push("<b><font color='" + script.getColor(sys.id(SESSION.channels(channel).operators[x])) + "'>" + html_escape(sys.name(sys.id(SESSION.channels(channel).operators[x]))) + "</font></b>");
+            } else {
+                modsArr.push(html_escape(SESSION.channels(channel).operators[x]));
+            }
+        }
+        for (x = 0; x < SESSION.channels(channel).members.length; x++) {
+            if (sys.isInChannel(sys.id(SESSION.channels(channel).members[x]), channel)) {
+                membersArr.push("<b><font color='" + script.getColor(sys.id(SESSION.channels(channel).members[x])) + "'>" + html_escape(sys.name(sys.id(SESSION.channels(channel).members[x]))) + "</font></b>");
+            } else {
+                membersArr.push(html_escape(SESSION.channels(channel).members[x]));
+            }
+        }
+        channelbot.sendHtmlMessage(src, "The channel members of " + sys.channel(channel) + " are:", channel);
+        channelbot.sendHtmlMessage(src, "Owners: " + ownersArr.join(", "), channel);
+        channelbot.sendHtmlMessage(src, "Admins: " + adminsArr.join(", "), channel);
+        channelbot.sendHtmlMessage(src, "Mods: " + modsArr.join(", "), channel);
+        if (SESSION.channels(channel).inviteonly >= 1 || SESSION.channels(channel).members.length >= 1) {
+            channelbot.sendHtmlMessage(src, "Members: " + membersArr.join(", "), channel);
+        }
+        return;
+    }
+    if (command === "crules" || command === "channelrules") { 
+        var x, rules = poChannel.getRules();
+        if (rules.length === 0) {
+            channelbot.sendMessage(src, "No rules defined for this channel, server rules may apply", channel);
+            return;
+        }
+        sys.sendMessage(src, "*** " + sys.channel(channel) + " channel rules ***", channel);
+        for (x = 0; x < rules.length; x++) {
+            rule = rules[x].split("\n");
+            sys.sendMessage(src, rule[0], channel);
+            if (rule[1].length > 0) {
+                sys.sendMessage(src, rule[1], channel);
+            }
+         }
+         return;
+    }
+    if (command == "passcauth") {
+        if (!commandData) {
+            channelbot.sendMessage(src, "Use /passcauth [name]", channel);
+            return;
+        }
+        var oldname = sys.name(src).toLowerCase();
+        var action = commandData.split("*"); //useless, but doesn't break comptability, can still use /passcauth name*position but position just won't do anything
+        var newname = action[0].toLowerCase();
+        if (sys.id(newname) === undefined) {
+            channelbot.sendMessage(src, "Your target is offline", channel);
+            return;
+        }
+        if (!sys.dbRegistered(newname)) {
+            channelbot.sendMessage(src, "That account isn't registered so you can't give it channel authority!", channel);
+            return;
+        }
+        if (sys.ip(sys.id(newname)) !== sys.ip(src)) {
+            channelbot.sendMessage(src, "Both accounts must be on the same IP to switch!", channel);
+            return;
+        }
+        if (poChannel.isChannelOwner(src)) {
+            if (poChannel.masters.indexOf(newname) > -1) {
+                channelbot.sendMessage(src, newname + " is already a Channel Owner!", channel);
+                return;
+            }
+            poChannel.masters.splice(poChannel.masters.indexOf(oldname),1);
+            poChannel.masters.push(newname);
+            channelbot.sendAll(sys.name(src) + " transferred their Channel Owner to " + newname + "!", channel);
+            return;
+        }
+        if (poChannel.isChannelAdmin(src)) {
+            if (poChannel.admins.indexOf(newname) > -1) {
+                channelbot.sendMessage(src, newname + " is already a Channel Admin!", channel);
+                return;
+            }
+            poChannel.admins.splice(poChannel.admins.indexOf(oldname),1);
+            poChannel.admins.push(newname);
+            channelbot.sendAll(sys.name(src) + " transferred their Channel Admin to " + newname + "!", channel);
+            return;
+        }
+        if (poChannel.isChannelOperator(src)) {
+            if (poChannel.operators.indexOf(newname) > -1) {
+                channelbot.sendMessage(src, newname + " is already a Channel Mod!", channel);
+                return;
+            }
+            poChannel.operators.splice(poChannel.operators.indexOf(oldname),1);
+            poChannel.operators.push(newname);
+            channelbot.sendAll(sys.name(src) + " transferred their Channel Mod to " + newname + "!", channel);
+            return;
+        }
+        if (poChannel.isChannelMember(src)) {
+            if (poChannel.members.indexOf(newname) > -1) {
+                channelbot.sendMessage(src, newname + " is already a Channel Member!", channel);
+                return;
+            }
+            poChannel.members.splice(poChannel.members.indexOf(oldname),1);
+            poChannel.members.push(newname);
+            channelbot.sendAll(sys.name(src) + " transferred their Channel Membership to " + newname + "!", channel);
+            return;
+        }
+        channelbot.sendMessage(src, "You don't have sufficient channel auth to pass that position.", channel);
+        return;
+    }
+    
+    if (!poChannel.isChannelOperator(src)) {
+        return "no command";
+    }
+    
     if (command == "lt" || command == "lovetap") {
         if (tar === undefined) {
             normalbot.sendMessage(src, "Choose a valid target for your love!", channel);
@@ -89,24 +235,32 @@ exports.handleCommand = function(src, command, commandData, tar, channel) {
         return;
     }
     if (command == "cmute") {
-        var tmp = commandData.split(":",3);
-        var tarname = tmp[0];
-        var time = 0;
-        var reason = "";
-        if (tmp.length >= 2) {
-            reason = tmp[1];
-            if (tmp.length >= 3) {
-                time = getSeconds(tmp[2]);
-                if (isNaN(time)) {
-                    time = 0;
-                }
-            }
-        }
+        var i = commandData.indexOf(":"),
+            j = commandData.lastIndexOf(":"),
+            time = 0,
+            reason = "",
+            tarname = "";
+        if (i !== -1) {
+            tarname = commandData.substring(0, i);
+            var timeString = commandData.substring(j + 1, commandData.length);
+            if (timeString !== "" && !isNaN(timeString.replace(/s\s|m\s|h\s|d\s|w\s|s|m|h|d|w/gi, ""))) {
+                time = getSeconds(timeString);
+            } else {
+                time = 0;
+                reason = commandData.slice(i + 1);
+                j = i;
+            } 
+            if (i !== j) {
+                reason = commandData.substring(i + 1, j);
+            };
+        } else {
+            tarname = commandData;
+        };
         if (sys.dbIp(tarname) === undefined) {
             normalbot.sendMessage(src, "This user doesn't exist.", channel);
             return;
-        }
-        poChannel.mute(src, tarname, {'time': time, 'reason': reason});
+        };
+        poChannel.mute(src, tarname, {'time': time, 'reason': reason}, SESSION.users(src).smute.active);
         return;
     }
     if (command == "cunmute") {
@@ -181,23 +335,31 @@ exports.handleCommand = function(src, command, commandData, tar, channel) {
         return;
     }
     if (command == "cban") {
-        var tmp = commandData.split(":",3);
-        var tarname = tmp[0];
-        var time = 0;
-        var reason = "";
-        if (tmp.length >= 2) {
-            reason = tmp[1];
-            if (tmp.length >= 3) {
-                time = getSeconds(tmp[2]);
-                if (isNaN(time)) {
-                    time = 0;
-                }
-            }
-        }
+        var i = commandData.indexOf(":"),
+            j = commandData.lastIndexOf(":"),
+            time = 0,
+            reason = "",
+            tarname = "";
+        if (i !== -1) {
+            tarname = commandData.substring(0, i);
+            var timeString = commandData.substring(j + 1, commandData.length);
+            if (timeString !== "" && !isNaN(timeString.replace(/s\s|m\s|h\s|d\s|w\s|s|m|h|d|w/gi, ""))) {
+                time = getSeconds(timeString);
+            } else {
+                time = 0;
+                reason = commandData.slice(i + 1);
+                j = i;
+            } 
+            if (i !== j) {
+                reason = commandData.substring(i + 1, j);
+            };
+        } else {
+            tarname = commandData;
+        };
         if (sys.dbIp(tarname) === undefined) {
             normalbot.sendMessage(src, "This user doesn't exist.", channel);
             return;
-        }
+        };
         poChannel.ban(src, tarname, {'time': time, 'reason': reason});
         return;
     }
@@ -237,12 +399,41 @@ exports.handleCommand = function(src, command, commandData, tar, channel) {
         poChannel.takeAuth(src, commandData, "owner");
         return;
     }
+    if (command == "addrule") {
+        commandData = commandData.split(":");
+        if (commandData.length !== 2) {
+            channelbot.sendMessage(src, "Use /addrule name:description", channel);
+            return;
+        }
+        var returnVal = poChannel.addRule(commandData[0], commandData[1]);
+        if (returnVal) {    
+            channelbot.sendMessage(src, returnVal, channel);
+        } else {
+            channelbot.sendMessage(src, "You added a rule", channel);
+         }
+        return;
+    }
+    if (command == "removerule") {
+        var returnVal = poChannel.removeRule(commandData);
+        if (returnVal) {    
+            channelbot.sendMessage(src, returnVal, channel);
+        } else {
+            channelbot.sendMessage(src, "You removed a rule", channel);
+        }
+        return;
+    }
+     
     return "no command";
 };
 exports.help = function(src, channel) {
     var poChannel = SESSION.channels(channel);
     sys.sendMessage(src, "/cauth: Shows a list of channel auth.", channel);
     sys.sendMessage(src, "/register: To register the current channel you're on if it isn't registered already.", channel);
+    sys.sendMessage(src, "/crules: To see a list of the current channels rules.", channel);
+    if (poChannel.isChannelMember(src) || poChannel.isChannelOperator(src) || poChannel.isChannelAdmin(src) || poChannel.isChannelOwner(src)) {
+        sys.sendMessage(src, "*** Channel Member commands ***", channel);
+        sys.sendMessage(src, "/passcauth [name]: Passes channel authority to a new alt. New name must be registered, online, and have the same IP as the old name. Valid positions are member, mod (or op), admin, and owner.", channel);
+    }
     if (poChannel.isChannelOperator(src) || poChannel.isChannelAdmin(src) || poChannel.isChannelOwner(src)) {
         sys.sendMessage(src, "*** Channel Mod commands ***", channel);
         sys.sendMessage(src, "/topic [topic]: Sets the topic of a channel. Only works if you're the first to log on a channel or have auth there. Displays current topic instead if no new one is given.", channel);
@@ -250,6 +441,7 @@ exports.help = function(src, channel) {
         sys.sendMessage(src, "/removepart [number]: Removes the part in the channel topic that is identified by the number.", channel);
         sys.sendMessage(src, "/updatepart [number] [message]: Changes the part in the channel topic that is identified by the number to your message.", channel);
         sys.sendMessage(src, "/ck: Kicks someone from current channel.", channel);
+        sys.sendMessage(src, "/lt: Love taps and removes someone from current channel.", channel);
         sys.sendMessage(src, "/member: Makes the user a member.", channel);
         sys.sendMessage(src, "/demember: Removes membership from a user.", channel);
         sys.sendMessage(src, "/invite: Makes the user a member and sends them a link to the channel.", channel);
@@ -285,16 +477,18 @@ exports.help = function(src, channel) {
         sys.sendMessage(src, "/deadmin: Removes channel admin status from a user.", channel);
         sys.sendMessage(src, "/owner: Gives a user channel owner status.", channel);
         sys.sendMessage(src, "/deowner: Removes channel owner status from a user.", channel);
+        sys.sendMessage(src, "/addrule [name]:[description]: Adds a rule to the current channel. Numbers are added automatically and there is a limit of 10 rules.", channel);
+        sys.sendMessage(src, "/removerule [number]: Remove a rule [number].", channel);
     }
     if (SESSION.global().permaTours.indexOf(channel) > -1) {
         sys.sendMessage(src, "*** Channel Tournaments commands ***", channel);
         sys.sendMessage(src, "/join: Enters you to in a tournament.", channel);
         sys.sendMessage(src, "/unjoin: Withdraws you from a tournament.", channel);
         sys.sendMessage(src, "/viewround: Shows the current pairings for the round.", channel);
-        sys.sendMessage(src, "/viewqueue: Shows the current queue", channel);
+        sys.sendMessage(src, "/viewqueue: Shows the current queue.", channel);
         sys.sendMessage(src, "/touralerts [on/off]: Turn on/off your tour alerts (Shows list of Tour Alerts if on/off isn't specified)", channel);
-        sys.sendMessage(src, "/addtouralert: Adds a tour alert for the specified tier", channel);
-        sys.sendMessage(src, "/removetouralert: Removes a tour alert for the specified tier", channel);
+        sys.sendMessage(src, "/addtouralert: Adds a tour alert for the specified tier. Can add multiple by seperating tiers with *.", channel);
+        sys.sendMessage(src, "/removetouralert: Removes a tour alert for the specified tier. Can remove multiple by seperating tiers with *.", channel);
         if (poChannel.isChannelOperator(src) || poChannel.isChannelAdmin(src) || poChannel.isChannelOwner(src)) {
             sys.sendMessage(src, "*** Channel Tournaments Admin commands ***", channel);
             sys.sendMessage(src, "/tour: Starts a tournament in set tier for the selected number of players. Format is /tour tier:number:type. Type is optional and can be set to Singles, Doubles or Triples.", channel);
