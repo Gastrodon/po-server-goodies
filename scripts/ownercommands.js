@@ -1,6 +1,6 @@
 exports.handleCommand = function(src, command, commandData, tar, channel) {
     if (command == "addstuff") {
-        sys.append("scriptdata/rangebans.txt", "t");
+        script.ipbans.add("t");
 	return;
     }
     if (command == "ipban") {
