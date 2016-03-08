@@ -40,7 +40,7 @@ function Hangman() {
     var suddenDeathLimit = 300;
     var suddenDeathChanceTime = 120;
     var tossUpCount, tossUpGuess;   
-
+    
     var hostIpArray = [];
     var hostName = "";
     var winner;
@@ -52,7 +52,7 @@ function Hangman() {
     var suddenDeath = 1;
     var tossUp = 2;
     var gameMode;
-
+    
     var checked = [];
     
     var word;
@@ -78,7 +78,7 @@ function Hangman() {
         last: {},
         currentMonth: -1
     };
-	var flashlist = {
+    var flashlist = {
         ip: {},
         name: {}
     };
@@ -152,7 +152,6 @@ function Hangman() {
                 eventCount = eventLimit;
             }
         }
-
     };
     
     this.guessCharacter = function (src, commandData) {
@@ -276,7 +275,6 @@ function Hangman() {
                     parts--;
                 }
             }
-
             if (parts > 0) {
                 hangbot.sendAll("[Hint: " + hint + "]  [Letters used: " + usedLetters.map(function (x) {
                     return x.toUpperCase();
@@ -341,7 +339,7 @@ function Hangman() {
         if (commandData.length < 4) {
             hangbot.sendMessage(src, "The answer must have at least four letters!", hangchan);
             return;
-        }     
+        }
         for (var x in points) {
             if (sys.ip(src) === sys.dbIp(x) && sys.name(src)!== x) {
                 hangbot.sendAll(x + " changed their name to " + sys.name(src) + "!", hangchan);
@@ -371,7 +369,6 @@ function Hangman() {
             if (sys.existChannel("Victory Road"))
                 hangbot.sendAll("Warning: Player " + sys.name(src) + " answered '" + ans + "' in #Hangman", sys.channelId("Victory Road"));
         }
-        
         sendChanHtmlAll(" ", hangchan);
         var thing = "";
         if (gameMode === suddenDeath) {
@@ -554,7 +551,7 @@ function Hangman() {
         if (gameMode === suddenDeath) {
             guesses = {};
         }
-	    if (gameMode === tossUp) {
+	if (gameMode === tossUp) {
             tossUpCount = 0;
             tossUpGuess = 7;
         }
@@ -583,7 +580,7 @@ function Hangman() {
                 }
             }
         }
-	    if (gameMode === tossUp) {          
+	if (gameMode === tossUp) {          
             var x, y, i = 0, total = word.length, keys = [];        
             while (i < total) {
                 x = Math.floor(Math.random() * word.length);
@@ -633,7 +630,7 @@ function Hangman() {
         hangbot.sendAll("Type " + (gameMode == regular ? "/g [letter] to guess a letter, and ":"") + "/a [answer] to guess the answer!", hangchan);
         if (gameMode == tossUp) {
             hangbot.sendAll("Guess the answer before the game reaches " + cutOff + "%!", hangchan);
-        }        
+        }
         sendChanHtmlAll(" ", hangchan);
         var time = parseInt(sys.time(), 10);
         if (time > this.lastAdvertise + 60 * 20) {
@@ -770,10 +767,9 @@ function Hangman() {
         if (sys.isInChannel(sys.id(w), hangchan)) { // IF THE WINNER IS STILL IN CHANNEL
             this.setWinner(w);
         } else { // IF THE WINNER IS NOT IN CHANNEL
-            hangbot.sendAll("The winner isn't in the channel, so anyone may start a game now!", hangchan);  
+            hangbot.sendAll("The winner isn't in the channel, so anyone may start a game now!", hangchan);
             this.setWinner(w, true);
         }
-
         if (isEventGame) {
             hangbot.sendAll(w + " won an Event Game and received 1 Leaderboard point!", hangchan);
             var lbWon = this.getPropCase(leaderboards.current, w),
@@ -1028,7 +1024,7 @@ function Hangman() {
             "±Unown: For more information on Toss Up, visit http://pokemon-online.eu/threads/33517/",
             "*** *********************************************************************** ***",
             ""
-        ];       
+        ];
         for (x in help) {
             sys.sendMessage(src, help[x], hangchan);
         }
@@ -1119,7 +1115,7 @@ function Hangman() {
         }
     };
     
-	this.flashlist = function (src) {
+    this.flashlist = function (src) {
         if (flashlist.ip[sys.ip(src)] || flashlist.name[sys.name(src)]) {       
             if (flashlist.ip[sys.ip(src)]) {
                 delete flashlist.ip[sys.ip(src)];
@@ -1911,7 +1907,7 @@ function Hangman() {
             }
             return true;
         }
-	    if (command === "forcetossup" || command === "forcetu") {
+	if (command === "forcetossup" || command === "forcetu") {
             if (word) {
                 hangbot.sendMessage(src, "A game is already running!", hangchan)
             }
@@ -2140,7 +2136,7 @@ function Hangman() {
                 currentMonth: -1
             };
         }
-	    try {
+	try {
             flashlist = JSON.parse(sys.read(flashlistFile));
         } catch (err) {
             hangbot.sendAll("Unable to load Hangman Flashlist.", hangchan);
