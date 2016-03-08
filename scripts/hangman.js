@@ -36,8 +36,9 @@ function Hangman() {
     var delayCount = 0;
     var delayLimit = 3;
     var passCount = 0;
-    var passLimit = 3;
+    var passLimit = 4;
     var suddenDeathLimit = 300;
+    var suddenDeathTime = suddenDeathLimit;    
     var suddenDeathChanceTime = 120;
     var tossUpCount, tossUpGuess;   
 
@@ -146,7 +147,7 @@ function Hangman() {
                 this.setWinner(hostName, (hostIpArray.indexOf(null) !== -1 && hostName == hangbot.name));
             } else {
                 hangbot.sendAll((!isEventGame ? "The winner isn't in the channel, so a":"A") + "nyone may start a game now!", hangchan);               
-                this.setWinner(hostName, true);
+                this.setWinner(undefined, true);
             }
             if (isEventGame) {
                 eventCount = eventLimit;
@@ -223,9 +224,9 @@ function Hangman() {
                 hangbot.sendMessage(src, "You can only use /g " + maxGuesses + " times!", hangchan);
                 return;
             }
-            if (suddenDeathLimit < suddenDeathChanceTime) {
-                suddenDeathLimit = suddenDeathChanceTime;
-                thing = "The time limit was restored to " + suddenDeathLimit / 60 + " minute(s)!";
+            if (suddenDeathTime < suddenDeathChanceTime) {
+                suddenDeathTime = suddenDeathChanceTime;
+                thing = "The time limit was restored to " + suddenDeathTime / 60 + " minute(s)!";
             }
         }
         if (!points[sys.name(src)]) {
@@ -299,7 +300,7 @@ function Hangman() {
                     this.setWinner(hostName, (hostIpArray.indexOf(null) !== -1 && hostName == hangbot.name));
                 } else { // IF HOST WINS AND NOT IN CHANNEL
                     hangbot.sendAll((!isEventGame ? "The winner isn't in the channel, so a":"A") + "nyone may start a game now!", hangchan);                
-                    this.setWinner(hostName, true); // TRUE SO PLAYER CAN INSTANT START
+                    this.setWinner(undefined, true); // TRUE SO PLAYER CAN INSTANT START
                 }
                 if (isEventGame) {
                     eventCount = eventLimit;
@@ -371,14 +372,14 @@ function Hangman() {
         sendChanHtmlAll(" ", hangchan);
         var thing = "";
         if (gameMode === suddenDeath) {
-            if (suddenDeathLimit < suddenDeathChanceTime) {
-                suddenDeathLimit = suddenDeathChanceTime;
-                thing = "The time limit was restored to " + suddenDeathLimit / 60 + " minute(s)!";
+            if (suddenDeathTime < suddenDeathChanceTime) {
+                suddenDeathTime = suddenDeathChanceTime;
+                thing = "The time limit was restored to " + suddenDeathTime / 60 + " minute(s)!";
             }
         }        
-        hangbot.sendAll("" + sys.name(src) + " answered " + ans + "! " + thing, hangchan);
         usedAnswers.push(ans.toLowerCase());        
         if (ans.toLowerCase() === word.toLowerCase()) {
+            hangbot.sendAll("" + sys.name(src) + " answered " + ans + "!", hangchan);            
             var p = 0,
                 e;
             for (e in currentWord) {
@@ -403,6 +404,7 @@ function Hangman() {
                 hangbot.sendAll("Type /start [answer]:[hint] to start a new game. If you didn't win then wait " + winnerDelay + " seconds.", hangchan);
             }
         } else {
+            hangbot.sendAll("" + sys.name(src) + " answered " + ans + "! " + thing, hangchan);               
             this.addMiss(src);
             this.applyPoints(src, 0);
             this.addAnswerUse(src);
@@ -547,6 +549,8 @@ function Hangman() {
         misses = {};
         answers = {};
         gameMode = mode;
+        passCount = 0;
+        
         if (gameMode === suddenDeath) {
             guesses = {};
         }
@@ -615,7 +619,7 @@ function Hangman() {
         sys.sendAll("*** ************************************************************ ***", hangchan);
         if (isEventGame) {
             hangbot.sendAll("A " + (gameMode == regular ? "regular":gameMode == suddenDeath ? "Sudden Death":"Toss Up") + " Event Game has started! The winner of this game will receive 1 Leaderboard point!", hangchan);
-            suddenDeathLimit = 300;
+            suddenDeathTime = suddenDeathLimit;
         } else {
             hangbot.sendAll(hostName + " started a new game of Hangman!", hangchan);
         }
@@ -627,7 +631,10 @@ function Hangman() {
             hangbot.sendMessage(src, "You started a Hangman game with the answer '" + word.toUpperCase() + "'. If you misspelled the answer or made some mistake, use /end to stop the game and fix it.", hangchan);
         }
         hangbot.sendAll("Type " + (gameMode == regular ? "/g [letter] to guess a letter, and ":"") + "/a [answer] to guess the answer!", hangchan);
-        if (gameMode == tossUp) {
+        if (gameMode === suddenDeath) {
+            hangbot.sendAll("Guess the answer within " + suddenDeathTime / 60 + " minute(s)!", hangchan);
+        }
+        if (gameMode === tossUp) {
             hangbot.sendAll("Guess the answer before the game reaches " + cutOff + "%!", hangchan);
         }
         sendChanHtmlAll(" ", hangchan);
@@ -767,7 +774,7 @@ function Hangman() {
             this.setWinner(w);
         } else { // IF THE WINNER IS NOT IN CHANNEL
             hangbot.sendAll("The winner isn't in the channel, so anyone may start a game now!", hangchan);
-            this.setWinner(w, true);
+            this.setWinner(undefined, true);
         }
         if (isEventGame) {
             hangbot.sendAll(w + " won an Event Game and received 1 Leaderboard point!", hangchan);
@@ -796,7 +803,7 @@ function Hangman() {
     };
     this.setWinner = function (name, immediate) {
         word = undefined;
-        winner = (immediate ? undefined:name);
+        winner = name;
         if (!immediate) {
             nextGame = (new Date()).getTime() + winnerDelay * 1000;
         }
@@ -887,7 +894,7 @@ function Hangman() {
             hangbot.sendMessage(src, "A game is already running!", hangchan);
             return;
         }
-        if (sys.name(src) !== winner && hangman.authLevel(src) < 1) {
+        if (winner && sys.name(src) !== winner && hangman.authLevel(src) < 1) {
             hangbot.sendMessage(src, "You are not the last winner or auth!", hangchan);
             return;
         }
@@ -900,12 +907,11 @@ function Hangman() {
             return;
         }
         if (sys.id(commandData) === undefined || !sys.isInChannel(sys.id(commandData), hangchan) || sys.name(sys.id(commandData)) == winner) {
-            hangbot.sendMessage(src, "You cannot pass start rights to this person!", hangchan);
+            hangbot.sendMessage(src, "You cannot pass starting rights to this person!", hangchan);
             return;
         }
         if (passCount >= passLimit) {
-            nextGame = 0;
-            passCount = 0;
+            hangbot.sendMessage(src, "You can't keep passing the rights around!", hangchan);
             return;
         }
         this.setWinner(sys.name(sys.id(commandData)));
@@ -2200,10 +2206,10 @@ function Hangman() {
             }
         }
         if (word && gameMode === suddenDeath) {
-            if (suddenDeathLimit > 0) {
-                suddenDeathLimit--;
-                if (suddenDeathLimit === suddenDeathChanceTime || suddenDeathLimit === suddenDeathChanceTime / 2) {
-                    hangbot.sendAll("You only have " + suddenDeathLimit / 60 + " minute(s) left!", hangchan);
+            if (suddenDeathTime > 0) {
+                suddenDeathTime--;
+                if (suddenDeathTime === suddenDeathChanceTime || suddenDeathTime === suddenDeathChanceTime / 2) {
+                    hangbot.sendAll("You only have " + suddenDeathTime / 60 + " minute(s) left!", hangchan);
                 }
             } else {
                 sys.sendAll("*** ************************************************************ ***", hangchan);
@@ -2214,10 +2220,10 @@ function Hangman() {
                     this.setWinner(hostName, (hostIpArray.indexOf(null) !== -1 && hostName == hangbot.name));
                 } else {
                     hangbot.sendAll((!isEventGame ? "The winner isn't in the channel, so a":"A") + "nyone may start a game now!", hangchan);           
-                    this.setWinner(hostName, true);
+                    this.setWinner(undefined, true);
                 }
                 eventCount = eventLimit;
-                suddenDeathLimit = 300;
+                suddenDeathTime = suddenDeathLimit;
             }
         }      
         if (word && gameMode === tossUp){
@@ -2274,7 +2280,7 @@ function Hangman() {
             }
         }
         if (winner && (new Date()).getTime() > nextGame && !word) {
-            winner = undefined;
+            this.setWinner(undefined, true);
             hangbot.sendAll("Anyone may start a game now!", hangchan);
         }
         if (eventCount === 60 && eventGamesEnabled) {
