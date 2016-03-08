@@ -140,9 +140,6 @@ function Hangman() {
             hangbot.sendAll("HANGED! No one guessed the word '" + word.toUpperCase() + "' correctly, so the host (" + hostName + ") has won this game! [Completion: " + i.toFixed(2) + "%]", hangchan);
             sys.sendAll("*** ************************************************************ ***", hangchan);
             sendChanHtmlAll(" ", hangchan);
-            usedTossUps = [];
-            tossUpOrder = [];
-            validFills = [];
             if (sys.isInChannel(sys.id(hostName), hangchan)) {
                 this.setWinner(hostName, (hostIpArray.indexOf(null) !== -1 && hostName == hangbot.name));
             } else {
@@ -562,6 +559,10 @@ function Hangman() {
         usedLetters = [];
         usedAnswers = [];
         currentWord = [];
+        usedTossUps = [];
+        tossUpOrder = [];
+        validFills = [];    
+        
         var e;
         for (e = 0; e < word.length; e++) {
             if (word[e] === " " || word[e] === "-") {
@@ -945,9 +946,6 @@ function Hangman() {
             word = undefined;
             winner = undefined;
             this.resetTimers();
-            usedTossUps = [];
-            tossUpOrder = [];
-            validFills = [];
             if (pendingEvent) {
                 eventDelay = true;
             }
