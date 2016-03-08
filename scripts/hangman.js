@@ -40,7 +40,7 @@ function Hangman() {
     var suddenDeathLimit = 300;
     var suddenDeathChanceTime = 120;
     var tossUpCount, tossUpGuess;   
-    
+
     var hostIpArray = [];
     var hostName = "";
     var winner;
@@ -52,9 +52,9 @@ function Hangman() {
     var suddenDeath = 1;
     var tossUp = 2;
     var gameMode;
-    
+
     var checked = [];
-    
+
     var word;
     var inputWord;
     var currentWord = [];
