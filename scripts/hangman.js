@@ -172,21 +172,6 @@ function Hangman() {
             hangbot.sendMessage(src, "You can't guess letters in Toss Up!", hangchan);
             return;
         } 
-        var thing = "";
-        if (gameMode === suddenDeath) {
-            if (vowels.indexOf(letter) >= 0) {
-                hangbot.sendMessage(src, "This is a Sudden Death game, you can't guess vowels!", hangchan);
-                return;
-            }
-            if (sys.name(src) in guesses && guesses[sys.name(src)] >= maxGuesses) {
-                hangbot.sendMessage(src, "You can only use /g " + maxGuesses + " times!", hangchan);
-                return;
-            }
-            if (suddenDeathLimit < suddenDeathChanceTime) {
-                suddenDeathLimit = suddenDeathChanceTime;
-                thing = "The time limit was restored to " + suddenDeathLimit / 60 + " minute(s)!";
-            }
-        }
         var now = (new Date()).getTime();
         if (now < SESSION.users(src).hangmanGuessTime) {
             hangbot.sendMessage(src, "You need to wait for another " + (Math.floor((SESSION.users(src).hangmanGuessTime - now) / 1000) + 1) + " seconds before using /g again!", hangchan);
@@ -228,7 +213,21 @@ function Hangman() {
             hangbot.sendMessage(src, "This letter was already used!", hangchan);
             return;
         }
-
+        var thing = "";
+        if (gameMode === suddenDeath) {
+            if (vowels.indexOf(letter) >= 0) {
+                hangbot.sendMessage(src, "This is a Sudden Death game, you can't guess vowels!", hangchan);
+                return;
+            }
+            if (sys.name(src) in guesses && guesses[sys.name(src)] >= maxGuesses) {
+                hangbot.sendMessage(src, "You can only use /g " + maxGuesses + " times!", hangchan);
+                return;
+            }
+            if (suddenDeathLimit < suddenDeathChanceTime) {
+                suddenDeathLimit = suddenDeathChanceTime;
+                thing = "The time limit was restored to " + suddenDeathLimit / 60 + " minute(s)!";
+            }
+        }
         if (!points[sys.name(src)]) {
             points[sys.name(src)] = 0;
         }
@@ -839,34 +838,44 @@ function Hangman() {
             hangbot.sendMessage(src, "Please choose a target user that is logged on the same IP.", hangchan);
             return;
         }
-        var currentName = sys.name(src).toLowerCase();
-        var targetName = commandData.toLowerCase();
-        if (currentName === targetName) { // CHECK IF TARGET ALT IS SAME AS CURRENT ALT
+        var currentName = sys.name(src);
+        var targetName = commandData.toCorrectCase();         
+        var lbUser = this.getPropCase(leaderboards.current, currentName),
+            lbScore = (!leaderboards.current[lbUser] ? 0:leaderboards.current[lbUser]),
+            lbTar = this.getPropCase(leaderboards.current, targetName);
+            
+        if (currentName.toLowerCase() === targetName.toLowerCase()) {
+            return;
+        }            
+        if (!lbUser) {
+            hangbot.sendMessage(src, "You're not rated on the leaderboard!", hangchan);
             return;
         }
-        if (!leaderboards.current.hasOwnProperty(currentName)) { // CURRENT NAME NOT ON THE LEADERBOARD
-            hangbot.sendMessage(src, "You're currently not rated on the leaderboard.", hangchan);
+        if (lbScore === 0) {
+            hangbot.sendMessage(src, "You don't have any points to transfer!", hangchan);
             return;
         }
-        if (sys.id(targetName) === undefined) { // CHECK IF TARGET NAME IS ONLINE
-            hangbot.sendMessage(src, "Your target is offline.", hangchan);
+        if (sys.id(targetName) === undefined) {
+            hangbot.sendMessage(src, "Your target is offline!", hangchan);
             return;
         }
-        if (!sys.dbRegistered(targetName)) { // CHECK IF TARGET NAME IS REGISTERED
-            hangbot.sendMessage(src, "That user isn't registered. You need to register it first.", hangchan);
+        if (!sys.dbRegistered(targetName)) {
+            hangbot.sendMessage(src, "That user isn't registered. You need to register it first!", hangchan);
             return;
         }
-        if (sys.ip(sys.id(targetName)) !== sys.ip(src)) { // CHECK IF TARGET NAME IS ON THE SAME IP
-            hangbot.sendMessage(src, "Both accounts must be on the same IP to pass your leaderboard points.", hangchan);
+        if (sys.ip(sys.id(targetName)) !== sys.ip(src)) {
+            hangbot.sendMessage(src, "Both accounts must be on the same IP to pass your leaderboard points!", hangchan);
             return;
         }
-        if (!leaderboards.current.hasOwnProperty(targetName)) { // CREATE NEW TARGET NAME IF IT DOESN'T EXIST ON THE LEADERBOARD
-            leaderboards.current[targetName] = 0;
+        if (!lbTar) {
+            leaderboards.current[targetName] = lbScore;
         }
-        leaderboards.current[targetName] = leaderboards.current[currentName] + leaderboards.current[targetName];
-        delete leaderboards.current[currentName];
+        else {
+            leaderboards.current[lbTar] += lbScore;
+        }
+        delete leaderboards.current[lbUser];
         sys.write(leaderboardsFile, JSON.stringify(leaderboards));
-        hangbot.sendMessage(src, "You passed your hangman leaderboard points from " + sys.name(sys.id(currentName)) + " to " + sys.name(sys.id(targetName)) + ".", hangchan);
+        hangbot.sendAll(currentName + " passed their hangman leaderboard points to " + targetName + "!", hangchan);
         return;
     };
     
