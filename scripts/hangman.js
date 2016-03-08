@@ -145,7 +145,7 @@ function Hangman() {
             if (sys.isInChannel(sys.id(hostName), hangchan)) {
                 this.setWinner(hostName, (hostIpArray.indexOf(null) !== -1 && hostName == hangbot.name));
             } else {
-                hangbot.sendAll((!isEventGame ?"The winner isn't in the channel, so a":"A") + "nyone may start a game now!", hangchan);               
+                hangbot.sendAll((!isEventGame ? "The winner isn't in the channel, so a":"A") + "nyone may start a game now!", hangchan);               
                 this.setWinner(hostName, true);
             }
             if (isEventGame) {
@@ -299,7 +299,7 @@ function Hangman() {
                 if (sys.isInChannel(sys.id(hostName), hangchan)) { // IF HOST WINS AND STILL IN CHANNEL
                     this.setWinner(hostName, (hostIpArray.indexOf(null) !== -1 && hostName == hangbot.name));
                 } else { // IF HOST WINS AND NOT IN CHANNEL
-                    hangbot.sendAll((!isEventGame ?"The winner isn't in the channel, so a":"A") + "nyone may start a game now!", hangchan);                
+                    hangbot.sendAll((!isEventGame ? "The winner isn't in the channel, so a":"A") + "nyone may start a game now!", hangchan);                
                     this.setWinner(hostName, true); // TRUE SO PLAYER CAN INSTANT START
                 }
                 if (isEventGame) {
@@ -641,7 +641,7 @@ function Hangman() {
             sys.sendAll("*** ************************************************************ ***", 0);
             sys.sendAll("", 0);
         }
-	    var playerlist = sys.playersOfChannel(hangchan);
+	var playerlist = sys.playersOfChannel(hangchan);
         var playerId;
         if (isEventGame) {
             for (var player in playerlist) {
