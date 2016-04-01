@@ -19,7 +19,7 @@ function Hangman() {
     var cutOff = 75;
     var idleCount = 0;
     var idleLimit = 1800;
-    var eventLimit = 80;    
+    var eventLimit = 1800;    
     var delayCount = 0;
     var delayLimit = 3;
     var passCount = 0;
