@@ -99,7 +99,7 @@ var updateModule = function updateModule(module_name, callback) {
    }
 };
 
-var channel, superAdmins, contributors, mutes, mbans, safbans, smutes, detained, hmutes, mafiaSuperAdmins, hangmanAdmins, hangmanSuperAdmins, staffchannel, channelbot, normalbot, bot, mafiabot, kickbot, capsbot, checkbot, coinbot, countbot, tourneybot, battlebot, commandbot, querybot, rankingbot, hangbot, bfbot, scriptChecks, lastMemUpdate, bannedUrls, mafiachan, sachannel, tourchannel, rangebans, proxy_ips, mafiaAdmins, authStats, nameBans, chanNameBans, isSuperAdmin, cmp, key, battlesStopped, lineCount, maxPlayersOnline, pastebin_api_key, pastebin_user_key, getSeconds, getTimeString, sendChanMessage, sendChanAll, sendMainTour, VarsCreated, authChangingTeam, usingBannedWords, repeatingOneself, capsName, CAPSLOCKDAYALLOW, nameWarns, poScript, revchan, triviachan, watchchannel, lcmoves, hangmanchan, ipbans, battlesFought, lastCleared, blackjackchan, namesToWatch, allowedRangeNames, reverseTohjo, safaribot, safarichan, tourconfig, teamsbot;
+var channel, contributors, mutes, mbans, safbans, smutes, detained, hmutes, mafiaSuperAdmins, hangmanAdmins, hangmanSuperAdmins, staffchannel, channelbot, normalbot, bot, mafiabot, kickbot, capsbot, checkbot, coinbot, countbot, tourneybot, battlebot, commandbot, querybot, rankingbot, hangbot, bfbot, scriptChecks, lastMemUpdate, bannedUrls, mafiachan, sachannel, tourchannel, rangebans, proxy_ips, mafiaAdmins, authStats, nameBans, chanNameBans, isSuperAdmin, cmp, key, battlesStopped, lineCount, maxPlayersOnline, pastebin_api_key, pastebin_user_key, getSeconds, getTimeString, sendChanMessage, sendChanAll, sendMainTour, VarsCreated, authChangingTeam, usingBannedWords, repeatingOneself, capsName, CAPSLOCKDAYALLOW, nameWarns, poScript, revchan, triviachan, watchchannel, lcmoves, hangmanchan, ipbans, battlesFought, lastCleared, blackjackchan, namesToWatch, allowedRangeNames, reverseTohjo, safaribot, safarichan, tourconfig, teamsbot;
 var rules = [ "",
     "*** Pokémon Online Server Rules ***",
     "",
@@ -431,7 +431,7 @@ serverStartUp : function() {
 },
 
 init : function() {
-    this.superAdmins = ["Mahnmut", "Strudels", "Blinky"];
+    script.superAdmins = ["Mahnmut", "Strudels", "Blinky"];
     sys.sendAll("init");
     lastMemUpdate = 0;
     bannedUrls = [];
@@ -544,12 +544,12 @@ init : function() {
     script.isMafiaAdmin = require('mafia.js').isMafiaAdmin;
     script.isMafiaSuperAdmin = require('mafia.js').isMafiaSuperAdmin;
     script.isSafariAdmin = require('safari.js').isChannelAdmin;
-    isSuperAdmin = function(id) {
-        if (typeof this.superAdmins != "object" || this.superAdmins.length === undefined) return false;
+    script.isSuperAdmin = function(id) {
+        if (typeof script.superAdmins != "object" || script.superAdmins.length === undefined) return false;
         if (sys.auth(id) != 2) return false;
         var name = sys.name(id);
-        for (var i = 0; i < this.superAdmins.length; ++i) {
-            if (script.cmp(name, this.superAdmins[i]))
+        for (var i = 0; i < script.superAdmins.length; ++i) {
+            if (script.cmp(name, script.superAdmins[i]))
                 return true;
         }
         return false;
