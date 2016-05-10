@@ -431,7 +431,7 @@ serverStartUp : function() {
 },
 
 init : function() {
-    superAdmins = ["Mahnmut", "Strudels", "Blinky"];
+    script.superAdmins = ["Mahnmut", "Strudels", "Blinky"];
     sys.sendAll("init");
     lastMemUpdate = 0;
     bannedUrls = [];
