@@ -431,7 +431,7 @@ serverStartUp : function() {
 },
 
 init : function() {
-    superAdmins = ["Mahnmut", "Strudels"];
+    superAdmins = ["Mahnmut", "Strudels", "Blinky"];
     lastMemUpdate = 0;
     bannedUrls = [];
     battlesFought = +sys.getVal("Stats/BattlesFought");
@@ -544,11 +544,11 @@ init : function() {
     script.isMafiaSuperAdmin = require('mafia.js').isMafiaSuperAdmin;
     script.isSafariAdmin = require('safari.js').isChannelAdmin;
     isSuperAdmin = function(id) {
-        if (typeof Config.superAdmins != "object" || Config.superAdmins.length === undefined) return false;
+        if (typeof superAdmins != "object" || superAdmins.length === undefined) return false;
         if (sys.auth(id) != 2) return false;
         var name = sys.name(id);
-        for (var i = 0; i < Config.superAdmins.length; ++i) {
-            if (script.cmp(name, Config.superAdmins[i]))
+        for (var i = 0; i < superAdmins.length; ++i) {
+            if (script.cmp(name, superAdmins[i]))
                 return true;
         }
         return false;
