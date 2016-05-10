@@ -431,7 +431,7 @@ serverStartUp : function() {
 },
 
 init : function() {
-    script.superAdmins = ["Mahnmut", "Strudels", "Blinky"];
+    this.superAdmins = ["Mahnmut", "Strudels"];
     sys.sendAll("init");
     lastMemUpdate = 0;
     bannedUrls = [];
@@ -545,11 +545,11 @@ init : function() {
     script.isMafiaSuperAdmin = require('mafia.js').isMafiaSuperAdmin;
     script.isSafariAdmin = require('safari.js').isChannelAdmin;
     isSuperAdmin = function(id) {
-        if (typeof superAdmins != "object" || superAdmins.length === undefined) return false;
+        if (typeof this.superAdmins != "object" || this.superAdmins.length === undefined) return false;
         if (sys.auth(id) != 2) return false;
         var name = sys.name(id);
-        for (var i = 0; i < superAdmins.length; ++i) {
-            if (script.cmp(name, superAdmins[i]))
+        for (var i = 0; i < this.superAdmins.length; ++i) {
+            if (script.cmp(name, this.superAdmins[i]))
                 return true;
         }
         return false;
