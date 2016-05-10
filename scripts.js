@@ -431,7 +431,7 @@ serverStartUp : function() {
 },
 
 init : function() {
-    superAdmins = ["Mahnmut", "Strudels", "Blinky"];
+    superAdmins = ["Mahnmut", "Strudels"];
     lastMemUpdate = 0;
     bannedUrls = [];
     battlesFought = +sys.getVal("Stats/BattlesFought");
